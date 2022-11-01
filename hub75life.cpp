@@ -71,6 +71,37 @@ private:
     std::vector<bool> _bits;
 };
 
+// Basic function to convert Hue, Saturation and Value to an RGB colour
+Pixel hsv_to_rgb(float h, float s, float v) {
+    if(h < 0.0f) {
+        h = 1.0f + fmod(h, 1.0f);
+    }
+
+    int i = int(h * 6);
+    float f = h * 6 - i;
+
+    v = v * 255.0f;
+
+    float sv = s * v;
+    float fsv = f * sv;
+
+    auto p = uint8_t(-sv + v);
+    auto q = uint8_t(-fsv + v);
+    auto t = uint8_t(fsv - sv + v);
+
+    uint8_t bv = uint8_t(v);
+
+    switch (i % 6) {
+        default:
+        case 0: return Pixel(bv, t, p);
+        case 1: return Pixel(q, bv, p);
+        case 2: return Pixel(p, bv, t);
+        case 3: return Pixel(p, q, bv);
+        case 4: return Pixel(t, p, bv);
+        case 5: return Pixel(bv, p, q);
+    }
+}
+
 void hub75_flip () {
     flip = true; // TODO: rewrite to semaphore
 }
@@ -208,17 +239,24 @@ int main() {
     BitSet nextmask;
 
     srand(time(NULL));
-
-    for (int x=0u; x<WIDTH; x++) {
-        for (int y=0u; y<WIDTH; y++) {
-            if (rand() & 0x10 != 0) {
-                prevmask.set(x,y, true);
-            }
-        }
-    }
+    int countdown = 0;
 
     while (true) {
         nextmask.clear();
+
+        if (countdown == 0) {
+            for (int x=0u; x<WIDTH; x++) {
+                for (int y=0u; y<WIDTH; y++) {
+                    if (rand() & 0x10 != 0) {
+                        prevmask.set(x,y, true);
+                    }
+                }
+            }
+            foreground = hsv_to_rgb((float)rand()/(float)RAND_MAX, 1.f, 1.f);
+            countdown = 5000;
+        }
+        countdown -= 1;
+
         for(auto x = 0u; x < WIDTH; x++) {
             const int px = (x + WIDTH - 1) % WIDTH;
             const int nx = (x + 1) % WIDTH;
@@ -249,5 +287,7 @@ int main() {
         prevmask = nextmask;
 
         hub75_flip();
+
+        sleep_ms(1);
     }
 }
