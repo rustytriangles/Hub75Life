@@ -1,7 +1,5 @@
 #include "hub75life.hpp"
 
-using namespace pimoroni;
-
 volatile bool flip = false;
 
 // This gamma table is used to correct our 8-bit (0-255) colours up to 11-bit,

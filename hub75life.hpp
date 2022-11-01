@@ -7,8 +7,6 @@
 #include "pico/multicore.h"
 #include "hardware/vreg.h"
 
-#include "common/pimoroni_common.hpp"
-
 const uint8_t WIDTH = 64;
 const uint8_t HEIGHT = 64;
 
