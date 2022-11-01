@@ -2,45 +2,6 @@
 
 using namespace pimoroni;
 
-const uint8_t WIDTH = 64;
-const uint8_t HEIGHT = 64;
-
-// Settings below are correct for I76, change them to suit your setup:
-
-// Top half of display - 16 rows on a 32x32 panel
-const uint PIN_R0 = 0;
-const uint PIN_G0 = 1;
-const uint PIN_B0 = 2;
-
-// Bottom half of display - 16 rows on a 64x64 panel
-const uint PIN_R1 = 3;
-const uint PIN_G1 = 4;
-const uint PIN_B1 = 5;
-
-// Address pins, 5 lines = 2^5 = 32 values (max 64x64 display)
-const uint PIN_ROW_A = 6;
-const uint PIN_ROW_B = 7;
-const uint PIN_ROW_C = 8;
-const uint PIN_ROW_D = 9;
-const uint PIN_ROW_E = 10;
-
-// Sundry things
-const uint PIN_CLK = 11;    // Clock
-const uint PIN_STB = 12;    // Strobe/Latch
-const uint PIN_OE = 13;     // Output Enable
-
-const bool CLK_POLARITY = 1;
-const bool STB_POLARITY = 1;
-const bool OE_POLARITY = 0;
-
-// User buttons and status LED
-const uint PIN_SW_A = 14;
-const uint PIN_SW_USER = 23;
-
-const uint PIN_LED_R = 16;
-const uint PIN_LED_G = 17;
-const uint PIN_LED_B = 18;
-
 volatile bool flip = false;
 
 // This gamma table is used to correct our 8-bit (0-255) colours up to 11-bit,
@@ -50,7 +11,7 @@ const uint16_t GAMMA_12BIT[256] = {
     16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
     32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 47, 50,
     52, 54, 57, 59, 62, 65, 67, 70, 73, 76, 79, 82, 85, 88, 91, 94,
-     98, 101, 105, 108, 112, 115, 119, 123, 127, 131, 135, 139, 143, 147, 151, 155,
+    98, 101, 105, 108, 112, 115, 119, 123, 127, 131, 135, 139, 143, 147, 151, 155,
     160, 164, 169, 173, 178, 183, 187, 192, 197, 202, 207, 212, 217, 223, 228, 233,
     239, 244, 250, 255, 261, 267, 273, 279, 285, 291, 297, 303, 309, 316, 322, 328,
     335, 342, 348, 355, 362, 369, 376, 383, 390, 397, 404, 412, 419, 427, 434, 442,
@@ -62,6 +23,7 @@ const uint16_t GAMMA_12BIT[256] = {
     1308, 1321, 1335, 1349, 1364, 1378, 1392, 1406, 1421, 1435, 1450, 1465, 1479, 1494, 1509, 1524,
     1539, 1554, 1570, 1585, 1600, 1616, 1631, 1647, 1663, 1678, 1694, 1710, 1726, 1743, 1759, 1775,
     1791, 1808, 1824, 1841, 1858, 1875, 1891, 1908, 1925, 1943, 1960, 1977, 1994, 2012, 2029, 2047};
+
 
 // We don't *need* to make Pixel a fancy struct with RGB values, but it helps.
 #pragma pack(push, 1)
@@ -82,27 +44,34 @@ struct alignas(4) Pixel {
 Pixel backbuffer[WIDTH][HEIGHT];
 Pixel frontbuffer[WIDTH][HEIGHT];
 
-// Required for FM6126A-based displays which need some register config/init to work properly
-void FM6126A_write_register(uint16_t value, uint8_t position) {
-    uint8_t threshold = WIDTH - position;
-    for(auto i = 0u; i < WIDTH; i++) {
-        auto j = i % 16;
-        bool b = value & (1 << j);
-        gpio_put(PIN_R0, b);
-        gpio_put(PIN_G0, b);
-        gpio_put(PIN_B0, b);
-        gpio_put(PIN_R1, b);
-        gpio_put(PIN_G1, b);
-        gpio_put(PIN_B1, b);
+#include <vector>
 
-        // Assert strobe/latch if i > threshold
-        // This somehow indicates to the FM6126A which register we want to write :|
-        gpio_put(PIN_STB, i > threshold);
-        gpio_put(PIN_CLK, CLK_POLARITY);
-        sleep_us(10);
-        gpio_put(PIN_CLK, !CLK_POLARITY);
+class BitSet {
+public:
+    BitSet() :
+        _bits(WIDTH*HEIGHT, false) {
     }
-}
+
+    BitSet& operator=(const BitSet& other) {
+        _bits = other._bits;
+        return *this;
+    }
+
+    bool test(int i, int j) const {
+        return _bits[i*HEIGHT+j];
+    }
+
+    void set(int i, int j, bool v) {
+        _bits[i*HEIGHT+j] = v;
+    }
+
+    void clear() {
+        _bits = std::vector(WIDTH*HEIGHT, false);
+    }
+
+private:
+    std::vector<bool> _bits;
+};
 
 void hub75_flip () {
     flip = true; // TODO: rewrite to semaphore
@@ -203,10 +172,6 @@ void hub75_display_update() {
     }
 }
 
-bool test_bit(std::bitset<WIDTH*HEIGHT> &b, int cx, int cy, int ox, int oy) {
-    return b.test(((cx + ox + WIDTH) % WIDTH) * HEIGHT + ((cy + oy + HEIGHT) % HEIGHT));
-}
-
 int main() {
     // 1.3v allows overclock to ~280000-300000 but YMMV. Faster clock = faster screen update rate!
     // vreg_set_voltage(VREG_VOLTAGE_1_30);
@@ -220,6 +185,7 @@ int main() {
     gpio_init(PIN_R0); gpio_set_function(PIN_R0, GPIO_FUNC_SIO); gpio_set_dir(PIN_R0, true);
     gpio_init(PIN_G0); gpio_set_function(PIN_G0, GPIO_FUNC_SIO); gpio_set_dir(PIN_G0, true);
     gpio_init(PIN_B0); gpio_set_function(PIN_B0, GPIO_FUNC_SIO); gpio_set_dir(PIN_B0, true);
+
     gpio_init(PIN_R1); gpio_set_function(PIN_R1, GPIO_FUNC_SIO); gpio_set_dir(PIN_R1, true);
     gpio_init(PIN_G1); gpio_set_function(PIN_G1, GPIO_FUNC_SIO); gpio_set_dir(PIN_G1, true);
     gpio_init(PIN_B1); gpio_set_function(PIN_B1, GPIO_FUNC_SIO); gpio_set_dir(PIN_B1, true);
@@ -237,42 +203,53 @@ int main() {
     // Launch the display update routine on Core 1, it's hungry for cycles!
     multicore_launch_core1(hub75_display_update);
 
-    std::bitset<WIDTH*HEIGHT> prev;
-    std::bitset<WIDTH*HEIGHT> next;
+    Pixel foreground(1.f, 1.f, 1.f);
+    Pixel background(0.f, 0.f, 0.f);
+
+    BitSet prevmask;
+    BitSet nextmask;
 
     srand(time(NULL));
 
-    for(auto x = 0u; x < WIDTH; x++) {
-        for(auto y = 0u; y < HEIGHT; y++) {
-            prev.set(x*HEIGHT + y, (rand() & 0x10) != 0);
+    for (int x=0u; x<WIDTH; x++) {
+        for (int y=0u; y<WIDTH; y++) {
+            if (rand() & 0x10 != 0) {
+                prevmask.set(x,y, true);
+            }
         }
     }
 
     while (true) {
+        nextmask.clear();
         for(auto x = 0u; x < WIDTH; x++) {
+            const int px = (x + WIDTH - 1) % WIDTH;
+            const int nx = (x + 1) % WIDTH;
             for(auto y = 0u; y < HEIGHT; y++) {
+                const int py = (y + HEIGHT - 1) % HEIGHT;
+                const int ny = (y + 1) % HEIGHT;
 
-                const int n_count = test_bit(prev, x, y, -1, -1)
-                                  + test_bit(prev, x, y, -1,  0)
-                                  + test_bit(prev, x, y, -1,  1)
-                                  + test_bit(prev, x, y,  0, -1)
-                                  + test_bit(prev, x, y,  0,  1)
-                                  + test_bit(prev, x, y,  1, -1)
-                                  + test_bit(prev, x, y,  1,  0)
-                                  + test_bit(prev, x, y,  1,  1);
+                const int n_count = prevmask.test(px,py)
+                                  + prevmask.test( x,py)
+                                  + prevmask.test(nx,py)
+                                  + prevmask.test(px, y)
+                                  + prevmask.test(nx, y)
+                                  + prevmask.test(px,ny)
+                                  + prevmask.test( x,ny)
+                                  + prevmask.test(nx,ny);
                 bool alive = false;
-                if (test_bit(prev, x, y, 0, 0)) {
+                if (prevmask.test(x,y)) {
                     alive = (n_count == 2 || n_count == 3);
                 } else {
                     alive = (n_count == 3);
                 }
 
-                next.set(x*HEIGHT+y, alive);
-                frontbuffer[x][y] = alive ? 2047 : 0;
+                nextmask.set(x, y, alive);
+                frontbuffer[x][y] = alive ? foreground : background;
             }
         }
 
-        std::swap(prev, next);
+        prevmask = nextmask;
+
         hub75_flip();
     }
 }

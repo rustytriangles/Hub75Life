@@ -9,7 +9,7 @@ include(pico_sdk_import.cmake)
 
 set(OUTPUT_NAME Hub75Life)
 
-project(${OUTPUT_NAME} VERSION 1.0.0 LANGUAGES CXX)
+project(${OUTPUT_NAME} VERSION 1.0.0)
 
 set(PIMORONI_DIR /Users/mike/development/pimoroni-pico)
 
