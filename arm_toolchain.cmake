@@ -15,9 +15,12 @@ set(CMAKE_RANLIB        ${TOOLCHAIN_PREFIX}ranlib CACHE INTERNAL "")
 set(CMAKE_SIZE          ${TOOLCHAIN_PREFIX}size CACHE INTERNAL "")
 set(CMAKE_STRIP         ${TOOLCHAIN_PREFIX}strip CACHE INTERNAL "")
 
-set(CMAKE_C_FLAGS       "-Wno-psabi --specs=nosys.specs -fdata-sections -ffunction-sections -Wl,--gc-sections" CACHE INTERNAL "")
+set(CMAKE_ASM_FLAGS     "-mcpu=cortex-m0plus -mthumb")
+set(CMAKE_C_FLAGS       "-mcpu=cortex-m0plus -mthumb" CACHE INTERNAL "")
 set(CMAKE_CXX_FLAGS     "${CMAKE_C_FLAGS} -fno-exceptions" CACHE INTERNAL "")
 
+set(CMAKE_ASM_FLAGS_DEBUG           "-Og -g")
+set(CMAKE_ASM_FLAGS_RELEASE         "-O3 -DNDEBUG")
 set(CMAKE_C_FLAGS_DEBUG             "-Os -g" CACHE INTERNAL "")
 set(CMAKE_C_FLAGS_RELEASE           "-Os -DNDEBUG" CACHE INTERNAL "")
 set(CMAKE_CXX_FLAGS_DEBUG           "${CMAKE_C_FLAGS_DEBUG}" CACHE INTERNAL "")
