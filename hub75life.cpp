@@ -246,7 +246,7 @@ int main() {
 
         if (countdown == 0) {
             for (int x=0u; x<WIDTH; x++) {
-                for (int y=0u; y<WIDTH; y++) {
+                for (int y=0u; y<HEIGHT; y++) {
                     if (rand() & 0x10 != 0) {
                         prevmask.set(x,y, true);
                     }
