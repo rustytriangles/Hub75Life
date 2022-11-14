@@ -1,5 +1,9 @@
 #include "hub75life.hpp"
 
+#include <exception>
+
+#include "bitset.hpp"
+
 volatile bool flip = false;
 
 // This gamma table is used to correct our 8-bit (0-255) colours up to 11-bit,
@@ -39,37 +43,13 @@ struct alignas(4) Pixel {
 // Create our front and back buffers.
 // We'll draw into the frontbuffer and then copy everything into the backbuffer which will be used to refresh the screen.
 // Double-buffering the display avoids screen tearing with fast animations or slow update rates.
-Pixel backbuffer[WIDTH][HEIGHT];
-Pixel frontbuffer[WIDTH][HEIGHT];
+Pixel backbuffer[FB_WIDTH][FB_HEIGHT];
+Pixel frontbuffer[FB_WIDTH][FB_HEIGHT];
 
 #include <vector>
 
-class BitSet {
-public:
-    BitSet() :
-        _bits(WIDTH*HEIGHT, false) {
-    }
-
-    BitSet& operator=(const BitSet& other) {
-        _bits = other._bits;
-        return *this;
-    }
-
-    bool test(int i, int j) const {
-        return _bits[i*HEIGHT+j];
-    }
-
-    void set(int i, int j, bool v) {
-        _bits[i*HEIGHT+j] = v;
-    }
-
-    void clear() {
-        _bits = std::vector(WIDTH*HEIGHT, false);
-    }
-
-private:
-    std::vector<bool> _bits;
-};
+const uint32_t GRID_WIDTH = 128;
+const uint32_t GRID_HEIGHT = 128;
 
 // Basic function to convert Hue, Saturation and Value to an RGB colour
 Pixel hsv_to_rgb(float h, float s, float v) {
@@ -115,22 +95,22 @@ void hub75_display_update() {
         // 0. Copy the contents of the front buffer into our backbuffer for output to the display.
         //    This uses another whole backbuffer worth of memory, but prevents visual tearing at low frequencies.
         if (flip) {
-            memcpy((uint8_t *)backbuffer, (uint8_t *)frontbuffer, WIDTH * HEIGHT * sizeof(Pixel));
+            memcpy((uint8_t *)backbuffer, (uint8_t *)frontbuffer, FB_WIDTH * FB_HEIGHT * sizeof(Pixel));
             flip = false;
         }
 
         // Step through 0b00000001, 0b00000010, 0b00000100 etc
         for(auto bit = 1u; bit < 1 << 11; bit <<= 1) {
             // Since the display is in split into two equal halves, we step through y from 0 to HEIGHT / 2
-            for(auto y = 0u; y < HEIGHT / 2; y++) {
+            for(auto y = 0u; y < FB_HEIGHT / 2; y++) {
 
                 // 1. Shift out pixel data
-                //    Shift out WIDTH pixels to the top and bottom half of the display
-                for(auto x = 0u; x < WIDTH; x++) {
+                //    Shift out FB_WIDTH pixels to the top and bottom half of the display
+                for(auto x = 0u; x < FB_WIDTH; x++) {
                     // Get the current pixel for top/bottom half
                     // This is easy since we just need the pixels at X/Y and X/Y+HEIGHT/2
                     Pixel pixel_top     = backbuffer[x][y];
-                    Pixel pixel_bottom  = backbuffer[x][y + HEIGHT / 2];
+                    Pixel pixel_bottom  = backbuffer[x][y + FB_HEIGHT / 2];
 
                     // Gamma correct the colour values from 8-bit to 11-bit
                     uint16_t pixel_top_b  = GAMMA_12BIT[pixel_top.b];
@@ -235,8 +215,8 @@ int main() {
     Pixel foreground(1.f, 1.f, 1.f);
     Pixel background(0.f, 0.f, 0.f);
 
-    BitSet prevmask;
-    BitSet nextmask;
+    BitSet prevmask(GRID_WIDTH, GRID_HEIGHT);
+    BitSet nextmask(GRID_WIDTH, GRID_HEIGHT);
 
     srand(time(NULL));
     int countdown = 0;
@@ -245,8 +225,8 @@ int main() {
         nextmask.clear();
 
         if (countdown == 0) {
-            for (int x=0u; x<WIDTH; x++) {
-                for (int y=0u; y<HEIGHT; y++) {
+            for (int x=0u; x<GRID_WIDTH; x++) {
+                for (int y=0u; y<GRID_HEIGHT; y++) {
                     if (rand() & 0x10 != 0) {
                         prevmask.set(x,y, true);
                     }
@@ -257,12 +237,12 @@ int main() {
         }
         countdown -= 1;
 
-        for(auto x = 0u; x < WIDTH; x++) {
-            const int px = (x + WIDTH - 1) % WIDTH;
-            const int nx = (x + 1) % WIDTH;
-            for(auto y = 0u; y < HEIGHT; y++) {
-                const int py = (y + HEIGHT - 1) % HEIGHT;
-                const int ny = (y + 1) % HEIGHT;
+        for(auto x = 0u; x < GRID_WIDTH; x++) {
+            const int px = (x + GRID_WIDTH - 1) % GRID_WIDTH;
+            const int nx = (x + 1) % GRID_WIDTH;
+            for(auto y = 0u; y < GRID_HEIGHT; y++) {
+                const int py = (y + GRID_HEIGHT - 1) % GRID_HEIGHT;
+                const int ny = (y + 1) % GRID_HEIGHT;
 
                 const int n_count = prevmask.test(px,py)
                                   + prevmask.test( x,py)
@@ -280,7 +260,26 @@ int main() {
                 }
 
                 nextmask.set(x, y, alive);
-                frontbuffer[x][y] = alive ? foreground : background;
+            }
+        }
+
+        for(auto x = 0u; x < (uint8_t)std::min((uint32_t)FB_WIDTH,GRID_WIDTH); x++) {
+            for(auto y = 0u; y < FB_HEIGHT; y++) {
+                frontbuffer[x][y] = nextmask.test(x,y) ? foreground : background;
+            }
+        }
+
+        //
+        // This is not correct
+        if (GRID_HEIGHT > FB_HEIGHT) {
+            int extra_columns = std::min(GRID_HEIGHT - FB_HEIGHT, FB_WIDTH - GRID_WIDTH);
+            for (int i=0; i<extra_columns; i++) {
+                int xdst = FB_HEIGHT + i;
+                int xsrc = GRID_WIDTH - i;
+                for (auto ydst = 0u; ydst < FB_HEIGHT; ydst++) {
+                    int ysrc = GRID_HEIGHT - ydst;
+                    frontbuffer[xdst][ydst] = nextmask.test(xsrc,ysrc) ? foreground : background;
+                }
             }
         }
 

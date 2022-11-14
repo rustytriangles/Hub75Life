@@ -2,13 +2,14 @@
 #include <cstdint>
 #include <cstring>
 #include <ctime>
+#include <stdexcept>
 
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
 #include "hardware/vreg.h"
 
-const uint8_t WIDTH = 64;
-const uint8_t HEIGHT = 64;
+const uint32_t FB_WIDTH = 128;
+const uint8_t FB_HEIGHT = 64;
 
 // Settings below are correct for I76, change them to suit your setup:
 
@@ -48,8 +49,8 @@ const uint PIN_LED_B = 18;
 
 // Required for FM6126A-based displays which need some register config/init to work properly
 void FM6126A_write_register(uint16_t value, uint8_t position) {
-    uint8_t threshold = WIDTH - position;
-    for(auto i = 0u; i < WIDTH; i++) {
+    uint8_t threshold = FB_WIDTH - position;
+    for(auto i = 0u; i < FB_WIDTH; i++) {
         auto j = i % 16;
         bool b = value & (1 << j);
         gpio_put(PIN_R0, b);
