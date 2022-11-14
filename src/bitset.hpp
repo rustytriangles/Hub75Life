@@ -9,8 +9,18 @@ public:
     }
 
     BitSet& operator=(const BitSet& other) {
+        _width = other._width;
+        _height = other._height;
         _bits = other._bits;
         return *this;
+    }
+
+    uint32_t width() const {
+        return _width;
+    }
+
+    uint32_t height() const {
+        return _height;
     }
 
     bool test(int i, int j) const {
