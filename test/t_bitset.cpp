@@ -26,6 +26,20 @@ BOOST_AUTO_TEST_CASE(width_height) {
     BOOST_TEST(b.height() == 64);
 }
 
+BOOST_AUTO_TEST_CASE(range_errors) {
+    BitSet b(64,64);
+
+    BOOST_CHECK_THROW(b.test(-1,12), std::out_of_range);
+    BOOST_CHECK_THROW(b.test(64,12), std::out_of_range);
+    BOOST_CHECK_THROW(b.test(12,-1), std::out_of_range);
+    BOOST_CHECK_THROW(b.test(12,64), std::out_of_range);
+
+    BOOST_CHECK_THROW(b.set(-1,12,true), std::out_of_range);
+    BOOST_CHECK_THROW(b.set(64,12,true), std::out_of_range);
+    BOOST_CHECK_THROW(b.set(12,-1,true), std::out_of_range);
+    BOOST_CHECK_THROW(b.set(12,64,true), std::out_of_range);
+}
+
 BOOST_AUTO_TEST_CASE(assign) {
     BitSet b(64,64);
 
@@ -110,6 +124,14 @@ BOOST_AUTO_TEST_CASE(life_empty) {
     tick(dst, src);
 
     BOOST_TEST(dst.any() == false);
+
+}
+
+BOOST_AUTO_TEST_CASE(life_size_mismatch) {
+    BitSet dst(64,64);
+    BitSet src(32,32);
+
+    BOOST_CHECK_THROW(tick(dst, src), std::range_error);
 
 }
 

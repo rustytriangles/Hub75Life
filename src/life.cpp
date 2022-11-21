@@ -1,8 +1,14 @@
+#include <exception>
+
 #include "life.hpp"
 
 void tick(BitSet &dst, const BitSet &src) {
-    assert(dst.width() == src.width());
-    assert(dst.height() == src.height());
+    if (dst.width() != src.width()) {
+        throw std::range_error("width");
+    }
+    if (dst.height() != src.height()) {
+        throw std::range_error("height");
+    }
 
     for(int x=0; x < src.width(); x++) {
         const int px = (x + src.width() - 1) % src.width();
@@ -19,15 +25,14 @@ void tick(BitSet &dst, const BitSet &src) {
                               + src.test(px,ny)
                               + src.test( x,ny)
                               + src.test(nx,ny);
-                bool alive = false;
-                if (src.test(x,y)) {
-                    alive = (n_count == 2 || n_count == 3);
-                } else {
-                    alive = (n_count == 3);
-                }
-
-                dst.set(x, y, alive);
+            bool alive = false;
+            if (src.test(x,y)) {
+                alive = (n_count == 2 || n_count == 3);
+            } else {
+                alive = (n_count == 3);
             }
-        }
-}
 
+            dst.set(x, y, alive);
+        }
+    }
+}

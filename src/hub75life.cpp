@@ -5,6 +5,7 @@
 #include "bitset.hpp"
 #include "hub75life.hpp"
 #include "hub75util.hpp"
+#include "life.hpp"
 
 volatile bool flip = false;
 
@@ -79,31 +80,7 @@ int main() {
         }
         countdown -= 1;
 
-        for(auto x = 0u; x < GRID_WIDTH; x++) {
-            const int px = (x + GRID_WIDTH - 1) % GRID_WIDTH;
-            const int nx = (x + 1) % GRID_WIDTH;
-            for(auto y = 0u; y < GRID_HEIGHT; y++) {
-                const int py = (y + GRID_HEIGHT - 1) % GRID_HEIGHT;
-                const int ny = (y + 1) % GRID_HEIGHT;
-
-                const int n_count = prevmask.test(px,py)
-                                  + prevmask.test( x,py)
-                                  + prevmask.test(nx,py)
-                                  + prevmask.test(px, y)
-                                  + prevmask.test(nx, y)
-                                  + prevmask.test(px,ny)
-                                  + prevmask.test( x,ny)
-                                  + prevmask.test(nx,ny);
-                bool alive = false;
-                if (prevmask.test(x,y)) {
-                    alive = (n_count == 2 || n_count == 3);
-                } else {
-                    alive = (n_count == 3);
-                }
-
-                nextmask.set(x, y, alive);
-            }
-        }
+        tick(nextmask, prevmask);
 
         for(auto x = 0u; x < (uint8_t)std::min((uint32_t)FB_WIDTH,GRID_WIDTH); x++) {
             for(auto y = 0u; y < FB_HEIGHT; y++) {

@@ -1,5 +1,6 @@
-#include <cassert>
 #include <vector>
+
+#include <stdexcept>
 
 #pragma once
 
@@ -27,16 +28,22 @@ public:
     }
 
     bool test(int i, int j) const {
-        assert(i >= 0 && i < _width);
-        assert(j >= 0 && j < _height);
-
+        if (i < 0 || i >= _width) {
+            throw std::out_of_range("X");
+        }
+        if (j < 0 || j >= _height) {
+            throw std::out_of_range("Y");
+        }
         return _bits[i*_height+j];
     }
 
     void set(int i, int j, bool v) {
-        assert(i >= 0 && i < _width);
-        assert(j >= 0 && j < _height);
-
+        if (i < 0 || i >= _width) {
+            throw std::out_of_range("X");
+        }
+        if (j < 0 || j >= _height) {
+            throw std::out_of_range("Y");
+        }
         _bits[i*_height+j] = v;
     }
 
@@ -60,4 +67,3 @@ private:
     uint32_t _height;
     std::vector<bool> _bits;
 };
-
