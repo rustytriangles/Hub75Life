@@ -1,5 +1,7 @@
 #include <iostream>
 
+#pragma once
+
 // This gamma table is used to correct our 8-bit (0-255) colours up to 11-bit,
 // allowing us to gamma correct without losing dynamic range.
 const uint16_t GAMMA_12BIT[256] = {

@@ -1,5 +1,7 @@
 #include "pixel.hpp"
 
+#pragma once
+
 void init_pins() {
     // Set up allllll the GPIO
     gpio_init(PIN_R0); gpio_set_function(PIN_R0, GPIO_FUNC_SIO); gpio_set_dir(PIN_R0, true);

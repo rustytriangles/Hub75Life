@@ -8,6 +8,8 @@
 #include "pico/multicore.h"
 #include "hardware/vreg.h"
 
+#pragma once
+
 const uint32_t FB_WIDTH = 128;
 const uint8_t FB_HEIGHT = 64;
 

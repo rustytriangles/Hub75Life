@@ -1,4 +1,7 @@
+#include <cassert>
 #include <vector>
+
+#pragma once
 
 class BitSet {
 public:
@@ -39,6 +42,17 @@ public:
 
     void clear() {
         _bits = std::vector<bool>(_width*_height, false);
+    }
+
+    bool any() const {
+        for (int i=0; i<_width; i++) {
+            for (int j=0; j<_height; j++) {
+                if (test(i,j)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 private:

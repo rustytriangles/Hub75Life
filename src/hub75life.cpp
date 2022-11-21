@@ -15,7 +15,7 @@ volatile bool flip = false;
 Pixel backbuffer[FB_WIDTH][FB_HEIGHT];
 Pixel frontbuffer[FB_WIDTH][FB_HEIGHT];
 
-const uint32_t GRID_WIDTH = 128;
+const uint32_t GRID_WIDTH = 64;
 const uint32_t GRID_HEIGHT = 64;
 
 void hub75_flip () {
