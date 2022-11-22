@@ -1,7 +1,3 @@
-#ifdef DUMP
-#include <iostream>
-#endif
-
 #include "../src/life.hpp"
 
 BOOST_AUTO_TEST_SUITE(t_life)
@@ -145,12 +141,7 @@ BOOST_AUTO_TEST_CASE(life_glider) {
     BOOST_TEST(gen4.any() == true);
 
 #ifdef DUMP
-    for (int j=0; j<64; j++) {
-        for (int i=0; i<64; i++) {
-            std::cout << (gen4.test(i,j) ? "X" : ".");
-        }
-        std::cout << std::endl;
-    }
+    std::cout << gen4;
 #endif
 
     for (int i=0; i<64; i++) {

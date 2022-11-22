@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vector>
 
 #include <stdexcept>
@@ -67,3 +68,5 @@ private:
     uint32_t _height;
     std::vector<bool> _bits;
 };
+
+std::ostream& operator<<(std::ostream& str, BitSet const& b);

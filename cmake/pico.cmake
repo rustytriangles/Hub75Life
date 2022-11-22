@@ -13,7 +13,7 @@ include(pico_sdk_import)
 set(PICO_CXX_ENABLE_EXCEPTIONS 1)
 
 # Link the Project to a source file (step 4.6)
-add_executable(${OUTPUT_NAME} src/hub75life.cpp src/pixel.cpp src/life.cpp)
+add_executable(${OUTPUT_NAME} src/hub75life.cpp src/pixel.cpp src/bitset.cpp src/life.cpp)
 
 # Link the Project to an extra library (pico_stdlib)
 target_link_libraries(${OUTPUT_NAME}

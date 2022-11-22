@@ -9,6 +9,7 @@
 
 volatile bool flip = false;
 
+#define RANDOM_PATTERNS 1
 
 // Create our front and back buffers.
 // We'll draw into the frontbuffer and then copy everything into the backbuffer which will be used to refresh the screen.
@@ -16,7 +17,7 @@ volatile bool flip = false;
 Pixel backbuffer[FB_WIDTH][FB_HEIGHT];
 Pixel frontbuffer[FB_WIDTH][FB_HEIGHT];
 
-const uint32_t GRID_WIDTH = 64;
+const uint32_t GRID_WIDTH = 128;
 const uint32_t GRID_HEIGHT = 64;
 
 void hub75_flip () {
@@ -68,6 +69,7 @@ int main() {
         nextmask.clear();
 
         if (countdown == 0) {
+#ifdef RANDOM_PATTERNS
             for (int x=0u; x<GRID_WIDTH; x++) {
                 for (int y=0u; y<GRID_HEIGHT; y++) {
                     if (rand() & 0x10 != 0) {
@@ -75,6 +77,18 @@ int main() {
                     }
                 }
             }
+#else
+            std::vector<std::pair<int,int> > pixels = {
+                std::make_pair(14,13),
+                std::make_pair(15,13),
+                std::make_pair(13,14),
+                std::make_pair(15,14),
+                std::make_pair(15,15) };
+
+            for (auto i=pixels.begin(); i!=pixels.end(); i++) {
+                prevmask.set(i->first, i->second, true);
+            }
+#endif
             foreground = hsv_to_rgb((float)rand()/(float)RAND_MAX, 1.f, 1.f);
             countdown = 5000;
         }
