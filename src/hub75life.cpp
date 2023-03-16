@@ -6,10 +6,9 @@
 #include "hub75life.hpp"
 #include "hub75util.hpp"
 #include "life.hpp"
+#include "util.hpp"
 
 volatile bool flip = false;
-
-#define RANDOM_PATTERNS 1
 
 // Create our front and back buffers.
 // We'll draw into the frontbuffer and then copy everything into the backbuffer which will be used to refresh the screen.
@@ -17,12 +16,25 @@ volatile bool flip = false;
 Pixel backbuffer[FB_WIDTH][FB_HEIGHT];
 Pixel frontbuffer[FB_WIDTH][FB_HEIGHT];
 
+void clear_buffer(Pixel (&buffer)[FB_WIDTH][FB_HEIGHT], const Pixel& color) {
+    for(auto x = 0u; x < FB_HEIGHT; x++) {
+        for(auto y = 0u; y < FB_HEIGHT; y++) {
+            buffer[x][y] = color;
+        }
+    }
+}
+
 const uint32_t GRID_WIDTH = 128;
 const uint32_t GRID_HEIGHT = 64;
 
-float random_between(float minval, float maxval) {
-    float v = (float)std::rand() / (float)RAND_MAX;
-    return minval + v*(maxval - minval);
+void set_pixels(Pixel (&buffer)[FB_WIDTH][FB_HEIGHT], BitSet &mask, Pixel &curr_color) {
+    for(auto x = 0u; x < (uint8_t)std::min((uint32_t)FB_WIDTH,GRID_WIDTH); x++) {
+        for(auto y = 0u; y < FB_HEIGHT; y++) {
+            if (mask.test(x,y)) {
+                buffer[x][y] = curr_color;
+            }
+        }
+    }
 }
 
 void hub75_flip () {
@@ -61,7 +73,7 @@ int main() {
     // Launch the display update routine on Core 1, it's hungry for cycles!
     multicore_launch_core1(hub75_display_update);
 
-    std::srand(std::time(nullptr));
+    rand_init();
 
     float curr_hue = random_between(0.f, 1.f);
     const float hue_step = 0.005;
@@ -77,16 +89,9 @@ int main() {
     while (true) {
         nextmask.clear();
 
-        if (countdown == 0) {
-            for(auto x = 0u; x < (uint8_t)std::min((uint32_t)FB_WIDTH,GRID_WIDTH); x++) {
-                for(auto y = 0u; y < FB_HEIGHT; y++) {
-                    if (nextmask.test(x,y)) {
-                        frontbuffer[x][y] = background;
-                    }
-                }
-            }
+        Pixel curr_color = hsv_to_rgb(curr_hue, 1.f, 1.f);
 
-#ifdef RANDOM_PATTERNS
+        if (countdown == 0) {
             for (int x=0u; x<GRID_WIDTH; x++) {
                 for (int y=0u; y<GRID_HEIGHT; y++) {
                     if (random_between(0.f, 1.f) > 0.75f) {
@@ -94,25 +99,17 @@ int main() {
                     }
                 }
             }
-#else
-            add_glider_at(prevmask, 13, 13);
 
-            add_block_at(prevmask, 35, 35);
-#endif
+            clear_buffer(frontbuffer, background);
+            set_pixels(frontbuffer, prevmask, curr_color);
+
             countdown = 5000;
         }
         countdown -= 1;
 
         tick(nextmask, prevmask);
 
-        Pixel curr_color = hsv_to_rgb(curr_hue, 1.f, 1.f);
-        for(auto x = 0u; x < (uint8_t)std::min((uint32_t)FB_WIDTH,GRID_WIDTH); x++) {
-            for(auto y = 0u; y < FB_HEIGHT; y++) {
-                if (nextmask.test(x,y)) {
-                    frontbuffer[x][y] = curr_color;
-                }
-            }
-        }
+        set_pixels(frontbuffer, nextmask, curr_color);
 
         curr_hue = fmod(curr_hue + hue_step, 1.);
         prevmask = nextmask;
