@@ -36,3 +36,24 @@ void tick(BitSet &dst, const BitSet &src) {
         }
     }
 }
+
+void add_glider_at(BitSet &dst, int x, int y) {
+    std::vector<std::pair<int,int> > pixels = {
+        std::make_pair( 1, 0),
+        std::make_pair( 2, 0),
+        std::make_pair( 0, 1),
+        std::make_pair( 2, 1),
+        std::make_pair( 2, 2) };
+
+    for (auto i=pixels.begin(); i!=pixels.end(); i++) {
+        dst.set(i->first + x, i->second + y, true);
+    }
+}
+
+void add_block_at(BitSet &dst, int x, int y) {
+    dst.set(x  , y  , true);
+    dst.set(x+1, y  , true);
+    dst.set(x  , y+1, true);
+    dst.set(x+1, y+1, true);
+}
+

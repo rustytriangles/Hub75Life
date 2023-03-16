@@ -20,6 +20,11 @@ Pixel frontbuffer[FB_WIDTH][FB_HEIGHT];
 const uint32_t GRID_WIDTH = 128;
 const uint32_t GRID_HEIGHT = 64;
 
+float random_between(float minval, float maxval) {
+    float v = (float)std::rand() / (float)RAND_MAX;
+    return minval + v*(maxval - minval);
+}
+
 void hub75_flip () {
     flip = true; // TODO: rewrite to semaphore
 }
@@ -56,7 +61,11 @@ int main() {
     // Launch the display update routine on Core 1, it's hungry for cycles!
     multicore_launch_core1(hub75_display_update);
 
-    Pixel foreground(1.f, 1.f, 1.f);
+    std::srand(std::time(nullptr));
+
+    float curr_hue = random_between(0.f, 1.f);
+    const float hue_step = 0.005;
+
     Pixel background(0.f, 0.f, 0.f);
 
     BitSet prevmask(GRID_WIDTH, GRID_HEIGHT);
@@ -69,53 +78,43 @@ int main() {
         nextmask.clear();
 
         if (countdown == 0) {
+            for(auto x = 0u; x < (uint8_t)std::min((uint32_t)FB_WIDTH,GRID_WIDTH); x++) {
+                for(auto y = 0u; y < FB_HEIGHT; y++) {
+                    if (nextmask.test(x,y)) {
+                        frontbuffer[x][y] = background;
+                    }
+                }
+            }
+
 #ifdef RANDOM_PATTERNS
             for (int x=0u; x<GRID_WIDTH; x++) {
                 for (int y=0u; y<GRID_HEIGHT; y++) {
-                    if (rand() & 0x10 != 0) {
+                    if (random_between(0.f, 1.f) > 0.75f) {
                         prevmask.set(x,y, true);
                     }
                 }
             }
 #else
-            std::vector<std::pair<int,int> > pixels = {
-                std::make_pair(14,13),
-                std::make_pair(15,13),
-                std::make_pair(13,14),
-                std::make_pair(15,14),
-                std::make_pair(15,15) };
+            add_glider_at(prevmask, 13, 13);
 
-            for (auto i=pixels.begin(); i!=pixels.end(); i++) {
-                prevmask.set(i->first, i->second, true);
-            }
+            add_block_at(prevmask, 35, 35);
 #endif
-            foreground = hsv_to_rgb((float)rand()/(float)RAND_MAX, 1.f, 1.f);
             countdown = 5000;
         }
         countdown -= 1;
 
         tick(nextmask, prevmask);
 
+        Pixel curr_color = hsv_to_rgb(curr_hue, 1.f, 1.f);
         for(auto x = 0u; x < (uint8_t)std::min((uint32_t)FB_WIDTH,GRID_WIDTH); x++) {
             for(auto y = 0u; y < FB_HEIGHT; y++) {
-                frontbuffer[x][y] = nextmask.test(x,y) ? foreground : background;
-            }
-        }
-
-        //
-        // This is not correct
-        if (GRID_HEIGHT > FB_HEIGHT) {
-            int extra_columns = std::min(GRID_HEIGHT - FB_HEIGHT, FB_WIDTH - GRID_WIDTH);
-            for (int i=0; i<extra_columns; i++) {
-                int xdst = FB_HEIGHT + i;
-                int xsrc = GRID_WIDTH - i;
-                for (auto ydst = 0u; ydst < FB_HEIGHT; ydst++) {
-                    int ysrc = GRID_HEIGHT - ydst;
-                    frontbuffer[xdst][ydst] = nextmask.test(xsrc,ysrc) ? foreground : background;
+                if (nextmask.test(x,y)) {
+                    frontbuffer[x][y] = curr_color;
                 }
             }
         }
 
+        curr_hue = fmod(curr_hue + hue_step, 1.);
         prevmask = nextmask;
 
         hub75_flip();
