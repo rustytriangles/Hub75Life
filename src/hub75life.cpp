@@ -14,13 +14,14 @@ volatile bool flip = false;
 const uint32_t GRID_WIDTH = 128;
 const uint32_t GRID_HEIGHT = 64;
 
-Hub75 hub75(GRID_WIDTH, GRID_HEIGHT, nullptr, PANEL_GENERIC, true);
+Hub75 hub75(FB_WIDTH, FB_HEIGHT, nullptr, PANEL_GENERIC, true);
 
 void set_pixels(BitSet &mask, Pixel &curr_color) {
-    for(auto x = 0u; x < (uint8_t)std::min((uint32_t)FB_WIDTH,GRID_WIDTH); x++) {
-        for(auto y = 0u; y < FB_HEIGHT; y++) {
+    for (uint32_t x=0; x<GRID_WIDTH; x++) {
+        for (uint32_t y=0; y<GRID_HEIGHT; y++) {
             if (mask.test(x,y)) {
-                hub75.set_color(x,y,curr_color);
+                std::pair<uint,uint> fb_index = grid_to_framebuffer(x,y,GRID_WIDTH,GRID_HEIGHT,FB_WIDTH,FB_HEIGHT);
+                hub75.set_color(fb_index.first,fb_index.second,curr_color);
             }
         }
     }

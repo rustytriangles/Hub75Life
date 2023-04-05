@@ -10,7 +10,7 @@
 
 #pragma once
 
-const uint32_t FB_WIDTH = 128;
+const uint32_t FB_WIDTH = 256;
 const uint8_t FB_HEIGHT = 64;
 
 // Settings below are correct for I76, change them to suit your setup:
