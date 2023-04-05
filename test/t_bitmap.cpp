@@ -1,9 +1,5 @@
 #include "../src/bitset.hpp"
 
-#include <algorithm>
-#include <utility>
-#include <vector>
-
 #include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("set_test") {
@@ -23,15 +19,15 @@ TEST_CASE("width_height") {
 TEST_CASE("range_errors") {
     BitSet b(64,64);
 
-    // BOOST_CHECK_THROW(b.test(-1,12), std::out_of_range);
-    // BOOST_CHECK_THROW(b.test(64,12), std::out_of_range);
-    // BOOST_CHECK_THROW(b.test(12,-1), std::out_of_range);
-    // BOOST_CHECK_THROW(b.test(12,64), std::out_of_range);
+    REQUIRE_THROWS_AS(b.test(-1,12), std::out_of_range);
+    REQUIRE_THROWS_AS(b.test(64,12), std::out_of_range);
+    REQUIRE_THROWS_AS(b.test(12,-1), std::out_of_range);
+    REQUIRE_THROWS_AS(b.test(12,64), std::out_of_range);
 
-    // BOOST_CHECK_THROW(b.set(-1,12,true), std::out_of_range);
-    // BOOST_CHECK_THROW(b.set(64,12,true), std::out_of_range);
-    // BOOST_CHECK_THROW(b.set(12,-1,true), std::out_of_range);
-    // BOOST_CHECK_THROW(b.set(12,64,true), std::out_of_range);
+    REQUIRE_THROWS_AS(b.set(-1,12,true), std::out_of_range);
+    REQUIRE_THROWS_AS(b.set(64,12,true), std::out_of_range);
+    REQUIRE_THROWS_AS(b.set(12,-1,true), std::out_of_range);
+    REQUIRE_THROWS_AS(b.set(12,64,true), std::out_of_range);
 }
 
 TEST_CASE("assign") {

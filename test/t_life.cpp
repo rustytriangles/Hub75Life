@@ -20,7 +20,7 @@ TEST_CASE("life_size_mismatch") {
     BitSet dst(64,64);
     BitSet src(32,32);
 
-//    BOOST_CHECK_THROW(tick(dst, src), std::range_error);
+    REQUIRE_THROWS_AS(tick(dst, src), std::range_error);
 
 }
 
